@@ -3,6 +3,7 @@ import { useSession } from "../features/auth/useSession";
 import { LoginPage } from "../features/auth/LoginPage";
 import { DashboardPage } from "../features/auth/DashboardPage";
 import { AccountsPage } from "../features/accounts/AccountsPage";
+import { LedgerNewPage } from "../features/ledger/LedgerNewPage";
 import type { ReactNode } from "react";
 
 function PrivateRoute({ children }: { children: ReactNode }) {
@@ -31,6 +32,15 @@ export function AppRouter() {
         element={
           <PrivateRoute>
             <AccountsPage />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/ledger/new"
+        element={
+          <PrivateRoute>
+            <LedgerNewPage />
           </PrivateRoute>
         }
       />

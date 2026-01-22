@@ -19,6 +19,12 @@ export function DashboardPage() {
           </div>
 
           <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => nav("/ledger/new")}
+              style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid #ddd", background: "#fff" }}
+            >
+              Novo lançamento
+            </button>
             <button onClick={() => nav("/accounts")} style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid #ddd", background: "#fff" }}>
               Plano de contas
             </button>
