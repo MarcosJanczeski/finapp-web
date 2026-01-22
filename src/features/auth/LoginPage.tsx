@@ -30,29 +30,48 @@ export function LoginPage() {
         <div style={{ opacity: 0.7, marginTop: 6, fontSize: 13 }}>Entrar</div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="E-mail"
-            style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
-          />
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Senha"
-            type="password"
-            style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
-          />
-
-          <button
-            onClick={signIn}
-            disabled={busy}
-            style={{ padding: 12, borderRadius: 14, border: "1px solid #111", background: "#111", color: "#fff", fontWeight: 900 }}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              signIn();
+            }}
+            style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}
           >
-            {busy ? "Entrando..." : "Entrar"}
-          </button>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="E-mail"
+              autoComplete="email"
+              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+            />
 
-          {msg && <div style={{ color: "#b00020", fontSize: 13 }}>{msg}</div>}
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Senha"
+              type="password"
+              autoComplete="current-password"
+              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+            />
+
+            <button
+              type="submit"
+              disabled={busy}
+              style={{
+                padding: 12,
+                borderRadius: 14,
+                border: "1px solid #111",
+                background: "#111",
+                color: "#fff",
+                fontWeight: 900,
+              }}
+            >
+              {busy ? "Entrando..." : "Entrar"}
+            </button>
+
+            {msg && <div style={{ color: "#b00020", fontSize: 13 }}>{msg}</div>}
+          </form>
+
         </div>
       </div>
     </div>
