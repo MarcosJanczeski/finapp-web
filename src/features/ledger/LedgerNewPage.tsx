@@ -10,15 +10,18 @@ type AccountRow = {
     name: string;
     category: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
     is_active: boolean;
+    is_postable: boolean;
 };
 
 async function listActiveAccounts(): Promise<AccountRow[]> {
     const { data, error } = await supabase
         .from("accounts")
-        .select("id,code,name,category,is_active")
+        .select("id,code,name,category,is_active,is_postable")
         .eq("is_active", true)
+        .eq("is_postable", true)
         .order("code", { ascending: true })
         .order("name", { ascending: true });
+
 
     if (error) throw error;
     return (data ?? []) as AccountRow[];
@@ -31,6 +34,7 @@ export function LedgerNewPage() {
         queryKey: ["accounts", "active"],
         queryFn: listActiveAccounts,
     });
+    const postableAccounts = (accountsQ.data ?? []).filter((a) => a.is_active && a.is_postable);
 
     const today = new Date().toISOString().slice(0, 10);
 
@@ -141,7 +145,7 @@ export function LedgerNewPage() {
                         >
 
                             <option value="">Selecione...</option>
-                            {accountsQ.data?.map((a) => (
+                            {postableAccounts.map((a) => (
                                 <option key={a.id} value={a.id}>
                                     {(a.code ? `${a.code} · ` : "") + a.name}
                                 </option>
@@ -155,7 +159,7 @@ export function LedgerNewPage() {
                             style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
                         >
                             <option value="">Selecione...</option>
-                            {accountsQ.data?.map((a) => (
+                            {postableAccounts.map((a) => (
                                 <option key={a.id} value={a.id}>
                                     {(a.code ? `${a.code} · ` : "") + a.name}
                                 </option>

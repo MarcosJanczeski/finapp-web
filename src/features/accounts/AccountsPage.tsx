@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../lib/supabaseClient";
 import { useEffect } from "react"; // no topo, junto com useMemo/useState
+import { useQueryClient } from "@tanstack/react-query";
 
 type AccountRow = {
   id: string;
@@ -21,6 +22,7 @@ type AccountRow = {
   | "PAYABLE"
   | "RECEIVABLE";
   is_active: boolean;
+  is_postable: boolean;
 };
 
 async function seedDefaultChart() {
@@ -31,7 +33,7 @@ async function seedDefaultChart() {
 async function listAccounts(): Promise<AccountRow[]> {
   const { data, error } = await supabase
     .from("accounts")
-    .select("id,workspace_id,parent_id,code,name,category,account_type,is_active")
+    .select("id,workspace_id,parent_id,code,name,category,account_type,is_active,is_postable")
     .order("code", { ascending: true })
     .order("name", { ascending: true });
 
@@ -70,12 +72,13 @@ async function createAccount(input: {
   if (error) throw error;
 }
 
-async function updateAccount(input: { id: string; name: string; code: string | null }) {
+async function updateAccount(input: { id: string; name: string; code: string | null; is_postable: boolean }) {
   const { error } = await supabase
     .from("accounts")
     .update({
       name: input.name,
       code: input.code,
+      is_postable: input.is_postable,
     })
     .eq("id", input.id);
 
@@ -109,6 +112,7 @@ export function AccountsPage() {
 
   const [msg, setMsg] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const qc = useQueryClient();
 
   // mini form state (inline)
   const [addingForId, setAddingForId] = useState<string | null>(null);
@@ -121,6 +125,8 @@ export function AccountsPage() {
   const [editName, setEditName] = useState("");
   const [editCode, setEditCode] = useState("");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [editPostable, setEditPostable] = useState(true);
+
   const rows = q.data ?? [];
 
   useEffect(() => {
@@ -183,6 +189,7 @@ export function AccountsPage() {
 
       setAddingForId(null);
       await q.refetch();
+      await qc.invalidateQueries({ queryKey: ["accounts", "active"] });
       setMsg("✅ Conta criada.");
     } catch (e: any) {
       setMsg(e?.message ?? "Erro ao criar conta.");
@@ -206,6 +213,7 @@ export function AccountsPage() {
     try {
       await deleteAccount(id);
       await q.refetch();
+      await qc.invalidateQueries({ queryKey: ["accounts", "active"] });
       setMsg("✅ Conta excluída.");
     } catch (e: any) {
       // FK RESTRICT / RLS / etc.
@@ -226,7 +234,7 @@ export function AccountsPage() {
     try {
       await toggleAccountActive(id, nextActive);
       await q.refetch();
-      setMsg("✅ Atualizado.");
+      await qc.invalidateQueries({ queryKey: ["accounts", "active"] });
     } catch (e: any) {
       setMsg(e?.message ?? "Erro ao atualizar.");
     } finally {
@@ -249,10 +257,12 @@ export function AccountsPage() {
         id,
         name: n,
         code: editCode.trim() || null,
+        is_postable: editPostable,
       });
 
       setEditingId(null);
       await q.refetch();
+      await qc.invalidateQueries({ queryKey: ["accounts", "active"] });
       setMsg("✅ Conta atualizada.");
     } catch (e: any) {
       setMsg(e?.message ?? "Erro ao atualizar conta.");
@@ -288,7 +298,10 @@ export function AccountsPage() {
                       {(a.code ? `${a.code} · ` : "") + a.name}
                     </div>
                     <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                      {a.category} · {a.account_type} · {a.is_active ? "Ativa" : "Inativa"}
+                      {a.category} ·
+                      {a.account_type} ·
+                      {a.is_active ? "Ativa" : "Inativa"} ·
+                      {a.is_postable ? "Lançável" : "Agrupadora"}
                     </div>
                   </div>
 
@@ -390,7 +403,14 @@ export function AccountsPage() {
 
                     <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nome" style={input} />
                     <input value={editCode} onChange={(e) => setEditCode(e.target.value)} placeholder="Código (opcional)" style={input} />
-
+                    <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        checked={editPostable}
+                        onChange={(e) => setEditPostable(e.target.checked)}
+                      />
+                      Permite lançamentos (conta analítica)
+                    </label>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button disabled={busyId === a.id} onClick={() => onSaveEdit(a.id)} style={btnPrimary}>
                         {busyId === a.id ? "Salvando..." : "Salvar"}
